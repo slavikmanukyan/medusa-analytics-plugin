@@ -15,6 +15,7 @@ It targets Medusa 2.22.1. It is not a generic replacement for every Medusa store
 - Variant ranking subtracts returned units, excludes newly issued Gift Cards, and uses the Order's title snapshot even if the catalog changed.
 - Low stock is current available Inventory after reservations, respects component quantities, excludes unmanaged Inventory and Gift Cards, and works without a SKU. The configurable threshold defaults to 5 and accepts 0.
 - All report screens, widgets and empty/error states are Russian.
+- Admin shares React Router 7 with the host dashboard. The router is an explicit peer dependency and must not be bundled or supplied as a separate Router 6 context.
 
 ## Validate and update
 
@@ -25,9 +26,10 @@ pnpm exec tsc --noEmit
 pnpm exec medusa plugin:build
 ```
 
-The consuming app pins a full Git commit. The compiled `.medusa/server` files
-are committed alongside source so pnpm/Docker can install this maintained fork
-without running untrusted install scripts or requiring an npm publication.
-After source changes, rebuild and `git add -f .medusa/server` before committing;
-update the full commit in the consuming app and refresh its lockfile. Never edit
-compiled files by hand. The original upstream README describes upstream behavior.
+The consuming app vendors a package archive and records the full source commit
+and SHA-256 in its provenance JSON. Compiled `.medusa/server` files are committed
+alongside source so installing the archive requires neither lifecycle scripts nor
+an npm publication. After source changes, rebuild and `git add -f .medusa/server`
+before committing; pack that commit, then update the archive, provenance, backend
+dependency and lockfile together. Never edit compiled files by hand. The original
+upstream README describes upstream behavior.

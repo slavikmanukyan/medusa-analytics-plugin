@@ -1,6 +1,6 @@
 {
   "name": "@agilo/medusa-analytics-plugin",
-  "version": "1.4.1-masalma.1",
+  "version": "1.4.1-masalma.2",
   "description": "A simple analytics plugin for Medusa",
   "author": "Ante Primorac <ante@agilo.com>",
   "publishConfig": {
@@ -75,14 +75,16 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "vite": "^7.3.6",
-    "yalc": "^1.0.0-pre.53"
+    "yalc": "^1.0.0-pre.53",
+    "react-router-dom": "7.18.2"
   },
   "peerDependencies": {
     "@medusajs/admin-sdk": ">=2.11.0 <3.0.0",
     "@medusajs/framework": ">=2.11.0 <3.0.0",
     "@medusajs/icons": ">=2.11.0 <3.0.0",
     "@medusajs/medusa": ">=2.11.0 <3.0.0",
-    "@medusajs/ui": ">=4.0.0 <5.0.0"
+    "@medusajs/ui": ">=4.0.0 <5.0.0",
+    "react-router-dom": "^7.18.2"
   },
   "engines": {
     "node": ">=20"
