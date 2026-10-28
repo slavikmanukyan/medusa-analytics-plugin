@@ -1888,7 +1888,7 @@ const AnalyticsPage = () => {
                       /* @__PURE__ */ jsxRuntime.jsxs(ui.Text, { size: "xsmall", className: "text-ui-fg-muted", children: [
                         (orderQuery.data?.prev_orders_percent || 0) > 0 && "+",
                         orderQuery.data?.prev_orders_percent || 0,
-                        "% from предыдущему периоду"
+                        "% к предыдущему периоду"
                       ] })
                     ] })
                   ] }),
@@ -1926,7 +1926,7 @@ const AnalyticsPage = () => {
                       /* @__PURE__ */ jsxRuntime.jsxs(ui.Text, { size: "xsmall", className: "text-ui-fg-muted", children: [
                         (orderQuery.data?.prev_sales_percent || 0) > 0 && "+",
                         orderQuery.data?.prev_sales_percent || 0,
-                        "% from предыдущему периоду"
+                        "% к предыдущему периоду"
                       ] })
                     ] })
                   ] }),

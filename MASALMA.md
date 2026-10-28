@@ -26,7 +26,7 @@ pnpm exec medusa plugin:build
 ```
 
 The consuming app pins a full Git commit. The compiled `.medusa/server` files
-are committed alongside source so pnpm/Docker can install this private fork
+are committed alongside source so pnpm/Docker can install this maintained fork
 without running untrusted install scripts or requiring an npm publication.
 After source changes, rebuild and `git add -f .medusa/server` before committing;
 update the full commit in the consuming app and refresh its lockfile. Never edit
