@@ -77,9 +77,9 @@ export const CustomersTable: React.FC<CustomersTableProps> = ({
   const columns = React.useMemo(
     () => [
       columnHelper.accessor('name', {
-        header: 'Name',
+        header: 'Имя',
         enableSorting: true,
-        sortLabel: 'Name',
+        sortLabel: 'Имя',
         sortAscLabel: 'A-Z',
         sortDescLabel: 'Z-A',
       }),
@@ -91,48 +91,50 @@ export const CustomersTable: React.FC<CustomersTableProps> = ({
         sortDescLabel: 'Z-A',
       }),
       columnHelper.accessor('order_count', {
-        header: 'Order Count',
+        header: 'Заказы',
         enableSorting: true,
-        sortLabel: 'Order Count',
-        sortAscLabel: 'Low to High',
-        sortDescLabel: 'High to Low',
+        sortLabel: 'Заказы',
+        sortAscLabel: 'По возрастанию',
+        sortDescLabel: 'По убыванию',
       }),
       columnHelper.accessor('sales', {
-        header: 'Total Sales',
+        header: 'Продажи за вычетом возвратов',
         enableSorting: true,
-        sortLabel: 'Total Sales',
-        sortAscLabel: 'Low to High',
-        sortDescLabel: 'High to Low',
+        sortLabel: 'Продажи за вычетом возвратов',
+        sortAscLabel: 'По возрастанию',
+        sortDescLabel: 'По убыванию',
         cell: ({ getValue }) => {
           const sales = getValue();
           return (
             <p>
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
-                currency: currencyCode || 'EUR',
+                currency: currencyCode || 'AMD',
               }).format(sales || 0)}
             </p>
           );
         },
       }),
       columnHelper.accessor('groups', {
-        header: 'Groups',
+        header: 'Группы',
         cell: ({ getValue }) => {
           const groups = getValue();
-          return <p>{groups.length ? groups.join(', ') : 'No Group'}</p>;
+          return <p>{groups.length ? groups.join(', ') : 'Без группы'}</p>;
         },
       }),
       columnHelper.accessor('last_order', {
-        header: 'Last Order',
+        header: 'Последний заказ',
         enableSorting: true,
-        sortLabel: 'Last Order',
-        sortAscLabel: 'Oldest to Newest',
-        sortDescLabel: 'Newest to Oldest',
+        sortLabel: 'Последний заказ',
+        sortAscLabel: 'Сначала старые',
+        sortDescLabel: 'Сначала новые',
         cell: ({ getValue }) => {
           const date = getValue();
           return (
             <p>
-              {date ? format(new Date(date), 'MMM dd, yyyy') : 'No orders yet'}
+              {date
+                ? new Intl.DateTimeFormat('ru-RU').format(new Date(date))
+                : 'Заказов пока нет'}
             </p>
           );
         },
@@ -167,16 +169,16 @@ export const CustomersTable: React.FC<CustomersTableProps> = ({
   return (
     <DataTable instance={table}>
       <div className="flex items-center justify-end gap-2 mb-4">
-        <DataTable.Search placeholder="Search..." />
+        <DataTable.Search placeholder="Поиск…" />
         <DataTable.SortingMenu />
       </div>
       <DataTable.Table
         emptyState={{
           filtered: {
-            heading: 'No customers found',
+            heading: 'Покупатели не найдены',
           },
           empty: {
-            heading: 'No customers available',
+            heading: 'Покупателей пока нет',
           },
         }}
       />

@@ -32,24 +32,24 @@ const columns = [
     sortDescLabel: 'Z-A',
   }),
   columnHelper.accessor('variantName', {
-    header: 'Variant Name',
+    header: 'Товар и размер',
     enableSorting: true,
-    sortLabel: 'Variant Name',
+    sortLabel: 'Товар и размер',
     sortAscLabel: 'A-Z',
     sortDescLabel: 'Z-A',
   }),
   columnHelper.accessor('inventoryQuantity', {
-    header: 'Inventory',
+    header: 'Доступно',
     enableSorting: true,
-    sortLabel: 'Inventory',
-    sortAscLabel: 'Low to High',
-    sortDescLabel: 'High to Low',
+    sortLabel: 'Доступно',
+    sortAscLabel: 'По возрастанию',
+    sortDescLabel: 'По убыванию',
     cell: ({ getValue }) => {
       const value = getValue();
 
       return (
         <p className={cn(value === 0 && 'text-ui-fg-error')}>
-          {value === 0 ? 'Out of Stock' : value}
+          {value === 0 ? 'Нет в наличии' : value}
         </p>
       );
     },
@@ -104,11 +104,18 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
   const table = useDataTable({
     columns,
     data: shownProducts,
-    getRowId: (product) => product.sku,
-    rowCount: products.length,
+    getRowId: (product) => product.variantId,
+    rowCount: products.filter(
+      (product) =>
+        product.variantName.toLowerCase().includes(search.toLowerCase()) ||
+        product.sku.toLowerCase().includes(search.toLowerCase()),
+    ).length,
     search: {
       state: search,
-      onSearchChange: setSearch,
+      onSearchChange: (value) => {
+        setSearch(value);
+        setPagination((previous) => ({ ...previous, pageIndex: 0 }));
+      },
     },
     pagination: {
       state: pagination,
@@ -129,15 +136,15 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
   return (
     <DataTable instance={table}>
       <DataTable.Toolbar className="px-0 pt-0">
-        <DataTable.Search placeholder="Search..." />
+        <DataTable.Search placeholder="Поиск…" />
       </DataTable.Toolbar>
       <DataTable.Table
         emptyState={{
           filtered: {
-            heading: 'No products found',
+            heading: 'Товары не найдены',
           },
           empty: {
-            heading: 'No products available',
+            heading: 'Товаров пока нет',
           },
         }}
       />

@@ -74,7 +74,7 @@ export const ProductsTableSkeleton = () => {
   return (
     <DataTable instance={table}>
       <DataTable.Toolbar className="px-0 pt-0">
-        <DataTable.Search placeholder="Search..." />
+        <DataTable.Search placeholder="Поиск…" />
       </DataTable.Toolbar>
       <DataTable.Table />
     </DataTable>

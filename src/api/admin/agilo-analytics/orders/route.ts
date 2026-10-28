@@ -1,249 +1,84 @@
-import { MedusaRequest, MedusaResponse } from '@medusajs/framework/http';
-import {
-  BigNumber,
-  ContainerRegistrationKeys,
-  MedusaError,
-  Modules,
-} from '@medusajs/framework/utils';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import {
-  calculateDateRangeMethod,
-  getAllDateGroupingKeys,
-  getDateGroupingKey,
-} from '../../../../utils/orders';
-import { DateTime } from 'luxon';
-
-export const adminOrdersListQuerySchema = z.discriminatedUnion('preset', [
-  z.object({
-    preset: z.literal('custom'),
-    date_from: z.string(),
-    date_to: z.string(),
-  }),
-  z.object({
-    preset: z.literal('this-month'),
-  }),
-  z.object({
-    preset: z.literal('last-month'),
-  }),
-  z.object({
-    preset: z.literal('last-3-months'),
-  }),
-]);
-const DEFAULT_CURRENCY = 'EUR';
-
-function getPercentChange(current: number, previous: number) {
-  if (previous === 0) return current === 0 ? 0 : 100;
-  return Number((((current - previous) / previous) * 100).toFixed(2));
-}
+import type { MedusaRequest, MedusaResponse } from '@medusajs/framework/http';
+import { reportContext } from '../../../../utils/reporting-query';
+import { bucketKeys, isSale, netSales } from '../../../../utils/reporting';
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
-  const result = adminOrdersListQuerySchema.safeParse(req.query);
-  if (!result.success) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      result.error.errors.map((err) => err.message).join(', '),
-    );
+  const { range, currency, fetchOrders } = await reportContext(req);
+  const raw = await fetchOrders();
+  const orders = raw.filter(isSale);
+  const previous = (
+    await fetchOrders(range.previousFrom, range.previousTo)
+  ).filter(isSale);
+  const buckets = bucketKeys(range.from, range.to, range.days);
+  const sales = new Map<string, number>();
+  const counts = new Map<string, number>();
+  const regions = new Map<string, number>();
+  const statuses = new Map<string, number>();
+  for (const order of raw) {
+    const status = order.metadata?.lifecycle ?? order.status ?? 'unknown';
+    statuses.set(status, (statuses.get(status) ?? 0) + 1);
   }
-  const validatedQuery = result.data;
-
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
-  const storeModuleService = req.scope.resolve(Modules.STORE);
-  const cacheModuleService = req.scope.resolve(Modules.CACHE);
-
-  const fetchOrders = async (dateRange: { from: string; to: string }) => {
-    const { data: orders } = await query.graph({
-      entity: 'order',
-      fields: [
-        'id',
-        'total',
-        'created_at',
-        'status',
-        'currency_code',
-        'region.name',
-      ],
-      pagination: {
-        order: {
-          created_at: 'asc',
-        },
-      },
-      filters: {
-        created_at: {
-          $gte: dateRange.from + 'T00:00:00Z',
-          $lte: dateRange.to + 'T23:59:59.999Z',
-        },
-        status: { $nin: ['draft'] },
-      },
-    });
-    return orders;
-  };
-
-  const stores = await storeModuleService.listStores(
-    {},
-    { relations: ['supported_currencies'] },
-  );
-
-  const store = stores?.[0];
-  const currencyCode =
-    store?.supported_currencies
-      ?.find((c) => c.is_default)
-      ?.currency_code?.toUpperCase() || DEFAULT_CURRENCY;
-
-  const cacheKey = `exchange_rates_${currencyCode}`;
-
-  let exchangeRates: { rates: Record<string, any> } | null =
-    await cacheModuleService.get(cacheKey);
-
-  if (!exchangeRates) {
-    const response = await fetch(
-      `https://api.frankfurter.dev/v1/latest?base=${currencyCode}`,
-    );
-    exchangeRates = await response.json();
-
-    const now = DateTime.now().setZone('Europe/Berlin');
-    let expireAt = now.set({ hour: 16, minute: 0, second: 0, millisecond: 0 });
-    if (now >= expireAt) {
-      expireAt = expireAt.plus({ days: 1 });
-    }
-
-    const ttl = Math.floor(expireAt.diff(now, 'seconds').seconds);
-
-    await cacheModuleService.set(cacheKey, exchangeRates, ttl);
-  }
-
-  const calculateDateRange = calculateDateRangeMethod[validatedQuery.preset];
-
-  if (!calculateDateRange) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      'Invalid preset value',
-    );
-  }
-
-  const { current, previous, days } = calculateDateRange(validatedQuery);
-
-  const currentFrom = format(current.start, 'yyyy-MM-dd');
-  const currentTo = format(current.end, 'yyyy-MM-dd');
-  const previousFrom = format(previous.start, 'yyyy-MM-dd');
-  const previousTo = format(previous.end, 'yyyy-MM-dd');
-
-  const orders = await fetchOrders({
-    from: currentFrom,
-    to: currentTo,
-  });
-
-  const prevRangeOrders = await fetchOrders({
-    from: previousFrom,
-    to: previousTo,
-  });
-
-  let groupBy: 'day' | 'week' | 'month' = 'day';
-  if (days > 120) {
-    groupBy = 'month';
-  } else if (days > 30) {
-    groupBy = 'week';
-  }
-
-  const keyRange = getAllDateGroupingKeys(groupBy, currentFrom, currentTo);
-
-  let regions: Record<string, number> = {};
-  let totalSales = 0;
-  let statuses: Record<string, number> = {};
-
-  const groupedByKey: Record<string, { orderCount: number; sales: number }> =
-    {};
-
   for (const order of orders) {
-    const exchangeRate =
-      order.currency_code.toUpperCase() !== currencyCode
-        ? exchangeRates?.rates[order.currency_code.toUpperCase()]
-        : 1;
-    const orderTotal = new BigNumber(order.total).numeric / exchangeRate;
-
-    const key = getDateGroupingKey(
-      new Date(order.created_at),
-      groupBy,
-      currentFrom,
-      currentTo,
-    );
-
-    if (!groupedByKey[key]) {
-      groupedByKey[key] = { orderCount: 0, sales: 0 };
-    }
-
-    groupedByKey[key].orderCount += 1;
-    groupedByKey[key].sales += orderTotal;
-
-    totalSales += orderTotal;
-
-    if (order.region?.name) {
-      regions[order.region.name] =
-        (regions[order.region.name] ?? 0) + orderTotal;
-    }
-
-    if (order.status) {
-      statuses[order.status] = (statuses[order.status] ?? 0) + 1;
-    }
+    const key = buckets.key(order.created_at);
+    const total = netSales(order);
+    sales.set(key, (sales.get(key) ?? 0) + total);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+    if (order.region?.name)
+      regions.set(
+        order.region.name,
+        (regions.get(order.region.name) ?? 0) + total,
+      );
   }
-
-  let prevTotalSales = 0;
-  for (const order of prevRangeOrders) {
-    const exchangeRate =
-      order.currency_code.toUpperCase() !== currencyCode
-        ? exchangeRates?.rates[order.currency_code.toUpperCase()]
-        : 1;
-    const orderTotal = new BigNumber(order.total).numeric / exchangeRate;
-    prevTotalSales += orderTotal;
-  }
-  const prevTotalOrders = prevRangeOrders.length;
-
-  const percentOrders = getPercentChange(orders.length, prevTotalOrders);
-  const percentSales = getPercentChange(totalSales, prevTotalSales);
-
-  const salesArray = keyRange.map((date) => ({
-    name: date,
-    sales: groupedByKey[date]?.sales ?? 0,
-  }));
-
-  const orderCountArray = keyRange.map((date) => ({
-    name: date,
-    count: groupedByKey[date]?.orderCount ?? 0,
-  }));
-
-  const regionsArray = Object.entries(regions)
-    .map(([region, amount]) => ({
-      name: region,
-      sales: Number(amount.toFixed(2)),
-    }))
-    .sort((a, b) => b.sales - a.sales)
-    .slice(0, 5);
-
-  const statusesArray = Object.entries(statuses).map(([status, count]) => ({
-    name: status,
-    count,
-  }));
-
+  const totalSales = orders.reduce((n, o) => n + netSales(o), 0);
+  const previousSales = previous.reduce((n, o) => n + netSales(o), 0);
+  const change = (n: number, p: number) =>
+    p === 0 ? (n === 0 ? 0 : 100) : Math.round(((n - p) / p) * 10000) / 100;
   res.json({
     total_orders: orders.length,
-    prev_orders_percent: percentOrders,
-    regions: regionsArray,
     total_sales: totalSales,
-    prev_sales_percent: percentSales,
-    statuses: statusesArray,
-    order_sales: salesArray,
-    order_count: orderCountArray,
-    currency_code: currencyCode,
+    currency_code: currency,
+    prev_orders_percent: change(orders.length, previous.length),
+    prev_sales_percent: change(totalSales, previousSales),
+    order_sales: buckets.keys.map((name) => ({
+      name,
+      sales: sales.get(name) ?? 0,
+    })),
+    order_count: buckets.keys.map((name) => ({
+      name,
+      count: counts.get(name) ?? 0,
+    })),
+    regions: [...regions]
+      .map(([name, sales]) => ({ name, sales }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5),
+    statuses: [...statuses].map(([status, count]) => ({
+      status,
+      name: statusLabels[status] ?? status,
+      count,
+    })),
   } satisfies OrderAnalyticsResponse);
 }
-
+const statusLabels: Record<string, string> = {
+  paid: 'Оплачен',
+  packed: 'Собран',
+  shipped: 'Отправлен',
+  delivered: 'Доставлен',
+  cancelled: 'Отменён',
+  canceled: 'Отменён',
+  refunded: 'Возвращён',
+  awaiting_payment: 'Ожидает оплаты',
+  pending: 'В обработке',
+  completed: 'Завершён',
+  archived: 'Архив',
+};
 export type OrderAnalyticsResponse = {
   total_orders: number;
-  regions: { name: string; sales: number }[];
   total_sales: number;
-  statuses: { name: string; count: number }[];
-  order_sales: { name: string; sales: number }[];
-  prev_sales_percent: number;
-  order_count: { name: string; count: number }[];
   prev_orders_percent: number;
+  prev_sales_percent: number;
   currency_code: string;
+  regions: { name: string; sales: number }[];
+  statuses: { name: string; count: number; status?: string }[];
+  order_sales: { name: string; sales: number }[];
+  order_count: { name: string; count: number }[];
 };

@@ -1,158 +1,90 @@
-import { MedusaRequest, MedusaResponse } from '@medusajs/framework/http';
-import { OrderDTO } from '@medusajs/framework/types';
+import type { MedusaRequest, MedusaResponse } from '@medusajs/framework/http';
+import { ContainerRegistrationKeys } from '@medusajs/framework/utils';
+import { reportContext } from '../../../../utils/reporting-query';
 import {
-  ContainerRegistrationKeys,
-  MedusaError,
-  Modules,
-} from '@medusajs/framework/utils';
-import { z } from 'zod';
-
-const DEFAULT_THRESHOLD = 5;
-
-export const adminProductAnalyticsQuerySchema = z.object({
-  date_from: z.string(),
-  date_to: z.string(),
-});
+  allGraph,
+  availableStock,
+  netLineQuantity,
+} from '../../../../utils/reporting';
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
-  const result = adminProductAnalyticsQuerySchema.safeParse(req.query);
-  if (!result.success) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      result.error.errors.map((err) => err.message).join(', '),
-    );
-  }
-  const validatedQuery = result.data;
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
-  const productService = req.scope.resolve(Modules.PRODUCT);
-  const inventoryService = req.scope.resolve(Modules.INVENTORY);
+  const { query, fetchOrders } = await reportContext(req);
   const config = req.scope.resolve(ContainerRegistrationKeys.CONFIG_MODULE);
-
-  const pluginConfig = config.plugins.find((p) =>
-    typeof p === 'string'
-      ? p === '@agilo/medusa-analytics-plugin'
-      : p.resolve === '@agilo/medusa-analytics-plugin',
-  );
-
-  const threshold =
-    typeof pluginConfig === 'string'
-      ? DEFAULT_THRESHOLD
-      : (pluginConfig?.options?.stock_threshold as number) || DEFAULT_THRESHOLD;
-
-  const { data: orders } = (await query.graph({
-    entity: 'order',
+  const plugin = config.plugins.find(
+    (p: any) =>
+      typeof p === 'object' && p.resolve === '@agilo/medusa-analytics-plugin',
+  ) as any;
+  const threshold = Number(plugin?.options?.stock_threshold ?? 5);
+  const stockThreshold =
+    Number.isFinite(threshold) && threshold >= 0 ? threshold : 5;
+  const sales = new Map<string, { title: string; quantity: number }>();
+  for (const order of await fetchOrders())
+    for (const line of order.items ?? []) {
+      if (!line.variant_id) continue;
+      const quantity = netLineQuantity(order, line);
+      if (!quantity) continue;
+      const row = sales.get(line.variant_id) ?? {
+        title: [line.product_title, line.variant_title]
+          .filter(Boolean)
+          .join(' '),
+        quantity: 0,
+      };
+      row.quantity += quantity;
+      sales.set(line.variant_id, row);
+    }
+  const { data: variants } = await allGraph(query, {
+    entity: 'variant',
     fields: [
       'id',
-      'items.quantity',
-      'items.variant.id',
-      'items.variant.title',
-      'items.product.title',
-      'items.*',
+      'sku',
+      'title',
+      'product_id',
+      'manage_inventory',
+      'product.title',
+      'product.is_giftcard',
+      'inventory_items.required_quantity',
+      'inventory_items.inventory.location_levels.stocked_quantity',
+      'inventory_items.inventory.location_levels.reserved_quantity',
     ],
-    pagination: {
-      order: {
-        created_at: 'asc',
-      },
-    },
-    filters: {
-      created_at: {
-        $gte: validatedQuery.date_from + 'T00:00:00Z',
-        $lte: validatedQuery.date_to + 'T23:59:59.999Z',
-      },
-      status: { $nin: ['draft'] },
-    },
-  })) as { data: OrderDTO[] };
-
-  let variantQuantitySold: Record<string, { title: string; quantity: number }> =
-    {};
-
-  orders.forEach((o) => {
-    o.items?.forEach((i) => {
-      if (i?.variant_id) {
-        if (!variantQuantitySold[i?.variant_id]) {
-          variantQuantitySold[i?.variant_id] = {
-            title: i.product_title + ' ' + i.variant_title,
-            quantity: 0,
-          };
-        }
-        variantQuantitySold[i.variant_id].quantity += i.quantity;
-      }
-    });
+    pagination: { order: { id: 'asc' } },
   });
-
-  const sortedVariantQuantitySold = Object.values(variantQuantitySold)
-    .map(({ title, quantity }) => ({ title, quantity }))
-    .sort((a, b) => b.quantity - a.quantity);
-
-  const inventoryLevel = await inventoryService.listInventoryLevels(
-    {
-      stocked_quantity: { $lte: threshold },
-    },
-    { select: ['id', 'inventory_item_id', 'stocked_quantity'] },
-  );
-  const inventoryItems = await inventoryService.listInventoryItems(
-    {
-      id: inventoryLevel.map((i) => i.inventory_item_id),
-    },
-    { select: ['id', 'sku'] },
-  );
-  const productVariants = await productService.listProductVariants(
-    {
-      sku: inventoryItems
-        .map((i) => i.sku)
-        .filter((i) => i !== undefined && i !== null),
-    },
-    { select: ['id', 'title', 'sku', 'product_id'] },
-  );
-
-  const quantityByItemId: Record<string, number> = {};
-  inventoryLevel.forEach((level) => {
-    quantityByItemId[level?.inventory_item_id] = level.stocked_quantity;
-  });
-
-  const quantityBySku: Record<string, number> = {};
-  inventoryItems.forEach((item) => {
-    if (item.sku) {
-      quantityBySku[item.sku] = quantityByItemId[item.id];
-    }
-  });
-
-  const lowStockVariants: {
-    sku: string;
-    variantName: string;
-    inventoryQuantity: number;
-    variantId: string;
-    productId: string;
-  }[] = [];
-
-  productVariants.forEach((variant) => {
-    if (variant.sku) {
-      lowStockVariants.push({
-        sku: variant.sku,
-        inventoryQuantity: quantityBySku[variant.sku],
-        variantName: variant.title,
-        productId: variant.product_id || '',
-        variantId: variant.id,
-      });
-    }
-  });
-
+  const lowStockVariants = variants
+    .filter((v) => !v.product?.is_giftcard)
+    .flatMap((variant) => {
+      const available = availableStock(variant);
+      return available === null || available > stockThreshold
+        ? []
+        : [
+            {
+              sku: variant.sku ?? '—',
+              variantId: variant.id,
+              productId: variant.product_id ?? '',
+              variantName: [variant.product?.title, variant.title]
+                .filter(Boolean)
+                .join(' '),
+              inventoryQuantity: available,
+            },
+          ];
+    })
+    .sort(
+      (a, b) =>
+        a.inventoryQuantity - b.inventoryQuantity ||
+        a.variantName.localeCompare(b.variantName, 'ru'),
+    );
   res.json({
     lowStockVariants,
-    variantQuantitySold: sortedVariantQuantitySold.slice(0, 10),
+    variantQuantitySold: [...sales.values()].sort(
+      (a, b) => b.quantity - a.quantity,
+    ),
   } satisfies ProductAnalyticsResponse);
 }
-
 export type ProductAnalyticsResponse = {
   lowStockVariants: {
     sku: string;
-    inventoryQuantity: number;
     variantName: string;
+    inventoryQuantity: number;
     variantId: string;
     productId: string;
   }[];
-  variantQuantitySold: {
-    title: string;
-    quantity: number;
-  }[];
+  variantQuantitySold: { title: string; quantity: number }[];
 };

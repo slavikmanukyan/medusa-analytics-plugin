@@ -15,9 +15,9 @@ export const SelectInterval: React.FC = () => {
         <Select.Value />
       </Select.Trigger>
       <Select.Content>
-        <Select.Item value="30-days-ago">Last 30 Days</Select.Item>
-        <Select.Item value="60-days-ago">Last 60 Days</Select.Item>
-        <Select.Item value="90-days-ago">Last 90 Days</Select.Item>
+        <Select.Item value="30-days-ago">Последние 30 дней</Select.Item>
+        <Select.Item value="60-days-ago">Последние 60 дней</Select.Item>
+        <Select.Item value="90-days-ago">Последние 90 дней</Select.Item>
       </Select.Content>
     </Select>
   );

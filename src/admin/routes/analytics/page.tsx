@@ -227,7 +227,12 @@ const AnalyticsPage = () => {
   return (
     <Container className="divide-y p-0">
       <div className="flex flex-wrap gap-x-2 gap-y-4 items-center justify-between px-6 py-4">
-        <Heading level="h1">Analytics</Heading>
+        <Heading level="h1">Аналитика</Heading>
+        <Text size="small" className="text-ui-fg-muted">
+          AMD · время Еревана. Продажи: товары и доставка за вычетом возвратов;
+          выпуск подарочных карт не включён. Возвраты пересчитывают период
+          исходного заказа.
+        </Text>
 
         <div className="flex flex-wrap gap-2">
           <div className="w-[170px]">
@@ -247,10 +252,12 @@ const AnalyticsPage = () => {
                 <Select.Value />
               </Select.Trigger>
               <Select.Content>
-                <Select.Item value="this-month">This Month</Select.Item>
-                <Select.Item value="last-month">Last Month</Select.Item>
-                <Select.Item value="last-3-months">Last 3 Months</Select.Item>
-                <Select.Item value="custom">Custom</Select.Item>
+                <Select.Item value="this-month">Этот месяц</Select.Item>
+                <Select.Item value="last-month">Прошлый месяц</Select.Item>
+                <Select.Item value="last-3-months">
+                  Последние 3 месяца
+                </Select.Item>
+                <Select.Item value="custom">Выбрать период</Select.Item>
               </Select.Content>
             </Select>
           </div>
@@ -258,7 +265,7 @@ const AnalyticsPage = () => {
             value={dateRangeToRangeValue(date)}
             onChange={handleDateRangeChange}
             isDisabled={orderQuery.isLoading || productQuery.isLoading}
-            aria-label="Date range"
+            aria-label="Период"
           >
             <Group className="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive justify-start focus-visible:shadow-borders-interactive-with-active disabled:bg-ui-bg-disabled disabled:text-ui-fg-disabled bg-ui-bg-field text-ui-fg-base txt-compact-small h-8 text-left font-normal data-[state=open]:!shadow-borders-interactive-with-active shadow-buttons-neutral hover:bg-ui-bg-field-hover outline-none transition-fg disabled:cursor-not-allowed min-w-[260px] bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-ui-bg-field-component dark:border-ui-border-base dark:hover:bg-ui-bg-field-hover px-4 border cursor-pointer">
               <CalendarIcon className="h-4 w-4 text-ui-fg-muted group-disabled:text-ui-fg-disabled flex-shrink-0" />
@@ -347,19 +354,19 @@ const AnalyticsPage = () => {
               value="orders"
               disabled={orderQuery.isLoading || productQuery.isLoading}
             >
-              Orders
+              Заказы
             </Tabs.Trigger>
             <Tabs.Trigger
               value="products"
               disabled={orderQuery.isLoading || productQuery.isLoading}
             >
-              Products
+              Товары
             </Tabs.Trigger>
             <Tabs.Trigger
               value="customers"
               disabled={orderQuery.isLoading || productQuery.isLoading}
             >
-              Customers
+              Покупатели
             </Tabs.Trigger>
           </Tabs.List>
           <div className="mt-8">
@@ -368,7 +375,7 @@ const AnalyticsPage = () => {
                 <div className="space-y-4 flex-1">
                   <Container className="relative">
                     <ShoppingCart className="absolute right-6 top-4 text-ui-fg-muted" />
-                    <Text size="small">Total Orders</Text>
+                    <Text size="small">Оплаченные заказы</Text>
                     {orderQuery.isLoading ? (
                       <SmallCardSkeleton />
                     ) : (
@@ -380,7 +387,7 @@ const AnalyticsPage = () => {
                           {(orderQuery.data?.prev_orders_percent || 0) > 0 &&
                             '+'}
                           {orderQuery.data?.prev_orders_percent || 0}% from
-                          previous period
+                          предыдущему периоду
                         </Text>
                       </>
                     )}
@@ -388,10 +395,10 @@ const AnalyticsPage = () => {
 
                   <Container className="min-h-[9.375rem]">
                     <Text size="xlarge" weight="plus">
-                      Orders Over Time
+                      Заказы по датам
                     </Text>
                     <Text size="small" className="mb-8 text-ui-fg-muted">
-                      Total number of orders in the selected period
+                      Оплаченные и неотменённые заказы за период
                     </Text>
                     <ChartStateWrapper
                       isLoading={orderQuery.isLoading}
@@ -417,22 +424,22 @@ const AnalyticsPage = () => {
                 <div className="space-y-4 flex-1">
                   <Container className="relative">
                     <ChartNoAxesCombined className="absolute right-6 text-ui-fg-muted top-4 size-[15px]" />
-                    <Text size="small">Total Sales</Text>
+                    <Text size="small">Продажи за вычетом возвратов</Text>
                     {orderQuery.isLoading ? (
                       <SmallCardSkeleton />
                     ) : (
                       <>
                         <Text size="xlarge" weight="plus">
-                          {new Intl.NumberFormat(undefined, {
+                          {new Intl.NumberFormat('ru-RU', {
                             style: 'currency',
-                            currency: orderQuery.data?.currency_code || 'EUR',
+                            currency: orderQuery.data?.currency_code || 'AMD',
                           }).format(orderQuery.data?.total_sales || 0)}
                         </Text>
                         <Text size="xsmall" className="text-ui-fg-muted">
                           {(orderQuery.data?.prev_sales_percent || 0) > 0 &&
                             '+'}
                           {orderQuery.data?.prev_sales_percent || 0}% from
-                          previous period
+                          предыдущему периоду
                         </Text>
                       </>
                     )}
@@ -440,10 +447,10 @@ const AnalyticsPage = () => {
 
                   <Container className="min-h-[9.375rem]">
                     <Text size="xlarge" weight="plus">
-                      Sales Over Time
+                      Продажи по датам
                     </Text>
                     <Text size="small" className="mb-8 text-ui-fg-muted">
-                      Total sales in the selected period (
+                      Продажи за выбранный период (
                       {orderQuery.data?.currency_code})
                     </Text>
                     <ChartStateWrapper
@@ -463,8 +470,8 @@ const AnalyticsPage = () => {
                           yAxisDataKey="sales"
                           lineColor="#82ca9d"
                           yAxisTickFormatter={(value) =>
-                            new Intl.NumberFormat(undefined, {
-                              currency: orderQuery.data?.currency_code || 'EUR',
+                            new Intl.NumberFormat('ru-RU', {
+                              currency: orderQuery.data?.currency_code || 'AMD',
                               maximumFractionDigits: 0,
                             }).format(
                               typeof value === 'number'
@@ -484,10 +491,10 @@ const AnalyticsPage = () => {
                 <div className="flex-1">
                   <Container className="min-h-[9.375rem]">
                     <Text size="xlarge" weight="plus">
-                      Top Regions by Sales
+                      Продажи по регионам
                     </Text>
                     <Text size="small" className="mb-8 text-ui-fg-muted">
-                      Sales breakdown by region in the selected period
+                      Продажи по регионам за выбранный период
                     </Text>
                     <ChartStateWrapper
                       isLoading={orderQuery.isLoading}
@@ -507,8 +514,8 @@ const AnalyticsPage = () => {
                           useStableColors={true}
                           colorKeyField="name"
                           yAxisTickFormatter={(value) =>
-                            new Intl.NumberFormat(undefined, {
-                              currency: orderQuery.data?.currency_code || 'EUR',
+                            new Intl.NumberFormat('ru-RU', {
+                              currency: orderQuery.data?.currency_code || 'AMD',
                               maximumFractionDigits: 0,
                             }).format(
                               typeof value === 'number'
@@ -526,10 +533,10 @@ const AnalyticsPage = () => {
                 <div className="flex-1">
                   <Container className="min-h-[9.375rem]">
                     <Text size="xlarge" weight="plus">
-                      Order Status Breakdown
+                      Статусы заказов
                     </Text>
                     <Text size="small" className="mb-8 text-ui-fg-muted">
-                      Distribution of orders by status in the selected period
+                      Все заказы по статусам, включая отменённые
                     </Text>
                     <ChartStateWrapper
                       isLoading={orderQuery.isLoading}
@@ -554,10 +561,10 @@ const AnalyticsPage = () => {
             <Tabs.Content value="products">
               <Container className="mb-4 min-h-[9.375rem]">
                 <Text size="xlarge" weight="plus">
-                  Top-Selling Products
+                  Самые продаваемые варианты
                 </Text>
                 <Text size="small" className="mb-8 text-ui-fg-muted">
-                  Products by quantity sold in selected period
+                  Количество проданных единиц за вычетом возвратов
                 </Text>
                 <ChartStateWrapper
                   isLoading={productQuery.isLoading}
@@ -571,7 +578,9 @@ const AnalyticsPage = () => {
                 >
                   <div className="w-full" style={{ aspectRatio: '16/9' }}>
                     <BarChart
-                      data={productQuery.data?.variantQuantitySold ?? []}
+                      data={(
+                        productQuery.data?.variantQuantitySold ?? []
+                      ).slice(0, 10)}
                       xAxisDataKey="title"
                       yAxisDataKey="quantity"
                       lineColor="#82ca9d"
@@ -584,10 +593,10 @@ const AnalyticsPage = () => {
               <div className="flex gap-4 max-xl:flex-col">
                 <Container>
                   <Text size="xlarge" weight="plus">
-                    Out-of-Stock Variants
+                    Нет в наличии
                   </Text>
                   <Text size="small" className="mb-8 text-ui-fg-muted">
-                    Products with zero inventory
+                    Варианты с нулевым доступным остатком
                   </Text>
                   {productQuery.isLoading ? (
                     <ProductsTableSkeleton />
@@ -603,10 +612,10 @@ const AnalyticsPage = () => {
                 </Container>
                 <Container>
                   <Text size="xlarge" weight="plus">
-                    Low Stock Variants
+                    Мало на складе
                   </Text>
                   <Text size="small" className="mb-8 text-ui-fg-muted">
-                    Products with inventory below threshold
+                    Доступный остаток с учётом резервов
                   </Text>
                   {productQuery.isLoading ? (
                     <ProductsTableSkeleton />
@@ -627,7 +636,7 @@ const AnalyticsPage = () => {
                 <div className="space-y-4 flex-1">
                   <Container className="relative">
                     <User className="absolute right-6 top-4 text-ui-fg-muted" />
-                    <Text size="small">Total Customers</Text>
+                    <Text size="small">Покупатели</Text>
                     {customerQuery.isLoading ? (
                       <SmallCardSkeleton />
                     ) : (
@@ -640,7 +649,7 @@ const AnalyticsPage = () => {
                   </Container>
                   <Container className="relative">
                     <User className="absolute right-6 top-4 text-ui-fg-muted" />
-                    <Text size="small">New Customers</Text>
+                    <Text size="small">Новые покупатели</Text>
                     {customerQuery.isLoading ? (
                       <SmallCardSkeleton />
                     ) : (
@@ -656,7 +665,7 @@ const AnalyticsPage = () => {
                 <div className="space-y-4 flex-1">
                   <Container className="relative">
                     <User className="absolute right-6 text-ui-fg-muted top-4 size-[15px]" />
-                    <Text size="small">Returning Customers</Text>
+                    <Text size="small">Повторные покупатели</Text>
                     {customerQuery.isLoading ? (
                       <SmallCardSkeleton />
                     ) : (
@@ -669,15 +678,15 @@ const AnalyticsPage = () => {
                   </Container>
                   <Container className="relative">
                     <ChartNoAxesCombined className="absolute right-6 top-4 text-ui-fg-muted" />
-                    <Text size="small">Average Sales per Customer</Text>
+                    <Text size="small">Средние продажи на покупателя</Text>
                     {customerQuery.isLoading || orderQuery.isLoading ? (
                       <SmallCardSkeleton />
                     ) : (
                       <>
                         <Text size="xlarge" weight="plus">
-                          {new Intl.NumberFormat(undefined, {
+                          {new Intl.NumberFormat('ru-RU', {
                             currency:
-                              customerQuery.data?.currency_code || 'EUR',
+                              customerQuery.data?.currency_code || 'AMD',
                             style: 'currency',
                           }).format(
                             customerQuery.data?.total_customers &&
@@ -696,7 +705,7 @@ const AnalyticsPage = () => {
                 <div className="flex-1">
                   <Container className="min-h-[9.375rem]">
                     <Text size="xlarge" weight="plus">
-                      New vs. Returning Customers
+                      Новые и повторные покупатели
                     </Text>
                     <Text size="small" className="mb-8 text-ui-fg-muted">
                       Distribution of new and returning customers in the
@@ -728,10 +737,10 @@ const AnalyticsPage = () => {
                 <div className="flex-1">
                   <Container className="min-h-[9.375rem]">
                     <Text size="xlarge" weight="plus">
-                      Top Customer Groups by Sales
+                      Продажи по группам покупателей
                     </Text>
                     <Text size="small" className="mb-8 text-ui-fg-muted">
-                      Sales breakdown by customer group in the selected period
+                      Продажи по группам за выбранный период
                     </Text>
                     <ChartStateWrapper
                       isLoading={customerQuery.isLoading}
@@ -751,9 +760,9 @@ const AnalyticsPage = () => {
                           colorKeyField="name"
                           yAxisDataKey="total"
                           yAxisTickFormatter={(value) =>
-                            new Intl.NumberFormat(undefined, {
+                            new Intl.NumberFormat('ru-RU', {
                               currency:
-                                customerQuery.data?.currency_code || 'EUR',
+                                customerQuery.data?.currency_code || 'AMD',
                               maximumFractionDigits: 0,
                             }).format(
                               typeof value === 'number'
@@ -772,17 +781,17 @@ const AnalyticsPage = () => {
               <div className="flex gap-4 max-xl:flex-col">
                 <Container>
                   <Text size="xlarge" weight="plus">
-                    Top Customers by Sales
+                    Покупатели по сумме покупок
                   </Text>
                   <Text size="small" className="mb-8 text-ui-fg-muted">
-                    Customers by sales in the selected period
+                    Покупатели по продажам за выбранный период
                   </Text>
                   {customerQuery.isLoading ? (
                     <CustomersTableSkeleton />
                   ) : (
                     <CustomersTable
                       customers={customerQuery.data?.customer_sales || []}
-                      currencyCode={customerQuery.data?.currency_code || 'EUR'}
+                      currencyCode={customerQuery.data?.currency_code || 'AMD'}
                     />
                   )}
                 </Container>
@@ -796,7 +805,7 @@ const AnalyticsPage = () => {
 };
 
 export const config = defineRouteConfig({
-  label: 'Analytics',
+  label: 'Аналитика',
   icon: ChartBar,
 });
 

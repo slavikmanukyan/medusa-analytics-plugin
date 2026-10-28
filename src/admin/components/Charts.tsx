@@ -8,7 +8,7 @@ import { ChartStateWrapper } from './StateWrappers';
 import { withOptionalAnalyticsRange } from '../lib/analytics-widgets-links';
 import { useOrderAnalytics } from '../hooks/order-analytics';
 
-// Products
+// Товары
 export const TopSellingProducts = () => {
   const { range } = useIntervalRange();
   const { data, isLoading, isError, error } = useProductAnalytics(range);
@@ -22,10 +22,10 @@ export const TopSellingProducts = () => {
       <div className="flex justify-between">
         <div>
           <Text size="large" weight="plus">
-            Top-Selling Products
+            Самые продаваемые варианты
           </Text>
           <Text size="xsmall" className="mb-4 text-ui-fg-muted ">
-            Top products by quantity sold in the selected time period
+            Варианты по количеству продаж за вычетом возвратов
           </Text>
         </div>
 
@@ -36,7 +36,7 @@ export const TopSellingProducts = () => {
           )}
         >
           <Button variant="transparent" className="text-ui-fg-muted text-xs ">
-            View more
+            Подробнее
           </Button>
         </a>
       </div>
@@ -71,10 +71,10 @@ export const LowStockVariants = () => {
       <div className="flex justify-between">
         <div>
           <Text size="large" weight="plus">
-            Low Stock Variants
+            Мало на складе
           </Text>
           <Text size="xsmall" className="mb-4 text-ui-fg-muted">
-            Products with inventory below threshold{' '}
+            Доступный остаток с учётом резервов{' '}
           </Text>
         </div>
 
@@ -85,7 +85,7 @@ export const LowStockVariants = () => {
           )}
         >
           <Button variant="transparent" className="text-ui-fg-muted text-xs ">
-            View more
+            Подробнее
           </Button>
         </a>
       </div>
@@ -124,10 +124,10 @@ export const BottomSellingProducts = () => {
       <div className="flex justify-between">
         <div>
           <Text size="large" weight="plus">
-            Bottom-Selling Products
+            Наименее продаваемые варианты
           </Text>
           <Text size="xsmall" className="mb-4 text-ui-fg-muted">
-            Worst products by quantity sold in the selected time period
+            Варианты с наименьшим количеством продаж
           </Text>
         </div>
 
@@ -138,7 +138,7 @@ export const BottomSellingProducts = () => {
           )}
         >
           <Button variant="transparent" className="text-ui-fg-muted text-xs ">
-            View more
+            Подробнее
           </Button>
         </a>
       </div>
@@ -167,7 +167,7 @@ export const BottomSellingProducts = () => {
   );
 };
 
-// Customers
+// Покупатели
 export const NewVsReturningCustomers = () => {
   const { range } = useIntervalRange();
   const { data, isLoading, isError, error } = useCustomerAnalytics(range);
@@ -177,10 +177,10 @@ export const NewVsReturningCustomers = () => {
       <div className="flex justify-between">
         <div>
           <Text size="large" weight="plus">
-            New vs Returning Customers
+            Новые и повторные покупатели
           </Text>
           <Text size="xsmall" className="mb-4 text-ui-fg-muted">
-            New and returning customers over time in the selected period
+            Новые и повторные покупатели за выбранный период
           </Text>
         </div>
 
@@ -191,7 +191,7 @@ export const NewVsReturningCustomers = () => {
           )}
         >
           <Button variant="transparent" className="text-ui-fg-muted text-xs ">
-            View more
+            Подробнее
           </Button>
         </a>
       </div>
@@ -226,10 +226,10 @@ export const TopCustomerGroupBySales = () => {
       <div className="flex justify-between">
         <div>
           <Text size="large" weight="plus">
-            Top Customer Groups by Sales
+            Продажи по группам покупателей
           </Text>
           <Text size="xsmall" className="mb-4 text-ui-fg-muted">
-            Sales breakdown by customer group in the selected period
+            Продажи по группам за выбранный период
           </Text>
         </div>
 
@@ -240,7 +240,7 @@ export const TopCustomerGroupBySales = () => {
           )}
         >
           <Button variant="transparent" className="text-ui-fg-muted text-xs ">
-            View more
+            Подробнее
           </Button>
         </a>
       </div>
@@ -298,10 +298,10 @@ export const AverageSalesPerCustomer = () => {
       <div className="flex justify-between">
         <div>
           <Text size="large" weight="plus">
-            Average Sales per Customer
+            Средние продажи на покупателя
           </Text>
           <Text size="xsmall" className="mb-4 text-ui-fg-muted">
-            Average sales per customer over time in the selected period
+            Средние продажи на покупателя за выбранный период
           </Text>
         </div>
         <a
@@ -311,7 +311,7 @@ export const AverageSalesPerCustomer = () => {
           )}
         >
           <Button variant="transparent" className="text-ui-fg-muted text-xs">
-            View more
+            Подробнее
           </Button>
         </a>
       </div>
@@ -330,9 +330,9 @@ export const AverageSalesPerCustomer = () => {
             yAxisDataKey="value"
             lineColor="#a1a1aa"
             yAxisTickFormatter={(value) =>
-              new Intl.NumberFormat(undefined, {
+              new Intl.NumberFormat('ru-RU', {
                 style: 'currency',
-                currency: ordersQuery.data?.currency_code || 'EUR',
+                currency: ordersQuery.data?.currency_code || 'AMD',
                 maximumFractionDigits: 0,
               }).format(
                 typeof value === 'number'

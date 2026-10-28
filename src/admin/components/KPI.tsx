@@ -29,17 +29,17 @@ const KPITimelineLabel: React.FC<{
         {percentage < 0 && (
           <ArrowDownMini className="size-3 self-center" viewBox="0 0 15 15" />
         )}
-        {new Intl.NumberFormat(undefined, {
+        {new Intl.NumberFormat('ru-RU', {
           style: 'percent',
           maximumFractionDigits: 2,
         }).format(Math.abs(percentage))}
       </span>{' '}
-      from the previous period
+      к предыдущему периоду
     </Text>
   );
 };
 
-// Orders
+// Заказы
 export const AverageOrderValue = () => {
   const { interval, range } = useIntervalRange();
   const { data, isLoading, isError, error } = useOrderAnalytics(
@@ -68,15 +68,15 @@ export const AverageOrderValue = () => {
   return (
     <Container className="flex flex-col">
       <div className="flex justify-between items-center">
-        <Text size="large">Average order value</Text>
+        <Text size="large">Средний чек</Text>
         <a
           href={withOptionalAnalyticsRange(
-            '/app/analytics?tab=orders#:~:text=Orders%20Over%20Time',
+            '/app/analytics?tab=orders#:~:text=Заказы%20Over%20Time',
             range,
           )}
         >
           <Button variant="transparent" className="text-ui-fg-muted text-xs">
-            View more
+            Подробнее
           </Button>
         </a>
       </div>
@@ -88,9 +88,9 @@ export const AverageOrderValue = () => {
         <div className="flex gap-4 justify-between flex-1">
           <div>
             <Text size="xlarge" weight="plus">
-              {new Intl.NumberFormat(undefined, {
+              {new Intl.NumberFormat('ru-RU', {
                 style: 'currency',
-                currency: (data?.currency_code || 'EUR').toUpperCase(),
+                currency: (data?.currency_code || 'AMD').toUpperCase(),
               }).format(
                 data?.total_sales && data?.total_orders
                   ? data.total_sales / data.total_orders
@@ -108,9 +108,9 @@ export const AverageOrderValue = () => {
                 yAxisDataKey="value"
                 lineColor="#a1a1aa"
                 yAxisTickFormatter={(value) =>
-                  new Intl.NumberFormat(undefined, {
+                  new Intl.NumberFormat('ru-RU', {
                     style: 'currency',
-                    currency: (data?.currency_code || 'EUR').toUpperCase(),
+                    currency: (data?.currency_code || 'AMD').toUpperCase(),
                     maximumFractionDigits: 0,
                   }).format(
                     typeof value === 'number'
@@ -140,7 +140,7 @@ export const TotalSales = () => {
   return (
     <Container className="flex flex-col">
       <div className="flex justify-between items-center">
-        <Text size="large">Total Sales</Text>
+        <Text size="large">Продажи за вычетом возвратов</Text>
         <a
           href={withOptionalAnalyticsRange(
             '/app/analytics#:~:text=Sales%20Over%20Time',
@@ -148,7 +148,7 @@ export const TotalSales = () => {
           )}
         >
           <Button variant="transparent" className="text-ui-fg-muted text-xs">
-            View more
+            Подробнее
           </Button>
         </a>
       </div>
@@ -160,9 +160,9 @@ export const TotalSales = () => {
         <div className="flex gap-4 justify-between flex-1">
           <div>
             <Text size="xlarge" weight="plus">
-              {new Intl.NumberFormat(undefined, {
+              {new Intl.NumberFormat('ru-RU', {
                 style: 'currency',
-                currency: data?.currency_code || 'EUR',
+                currency: data?.currency_code || 'AMD',
               }).format(data?.total_sales || 0)}
             </Text>
             <KPITimelineLabel
@@ -178,9 +178,9 @@ export const TotalSales = () => {
                 yAxisDataKey="sales"
                 lineColor="#a1a1aa"
                 yAxisTickFormatter={(value) =>
-                  new Intl.NumberFormat(undefined, {
+                  new Intl.NumberFormat('ru-RU', {
                     style: 'currency',
-                    currency: data?.currency_code || 'EUR',
+                    currency: data?.currency_code || 'AMD',
                     maximumFractionDigits: 0,
                   }).format(
                     typeof value === 'number'
@@ -210,15 +210,15 @@ export const TotalOrders = () => {
   return (
     <Container className="flex flex-col">
       <div className="flex justify-between items-center">
-        <Text size="large">Total Orders</Text>
+        <Text size="large">Оплаченные заказы</Text>
         <a
           href={withOptionalAnalyticsRange(
-            '/app/analytics#:~:text=Orders%20Over%20Time',
+            '/app/analytics#:~:text=Заказы%20Over%20Time',
             range,
           )}
         >
           <Button variant="transparent" className="text-ui-fg-muted text-xs">
-            View more
+            Подробнее
           </Button>
         </a>
       </div>

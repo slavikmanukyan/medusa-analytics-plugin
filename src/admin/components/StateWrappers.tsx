@@ -17,7 +17,7 @@ export const ChartStateWrapper: React.FC<BaseStateWrapperProps> = ({
   isError,
   errorMessage,
   isEmpty = false,
-  emptyText = 'No data available for the selected period.',
+  emptyText = 'За выбранный период данных пока нет.',
   children,
 }) => {
   if (isLoading) {
@@ -28,7 +28,7 @@ export const ChartStateWrapper: React.FC<BaseStateWrapperProps> = ({
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center aspect-video w-full mt-2.5 max-h-44">
         <Text size="xsmall" className="text-ui-fg-error">
-          Unable to load chart data.
+          Не удалось загрузить график.
         </Text>
 
         <Text size="xsmall" className="text-ui-fg-muted max-w-72 truncate">
@@ -57,7 +57,7 @@ export const KPIStateWrapper: React.FC<BaseStateWrapperProps> = ({
   isError,
   errorMessage,
   isEmpty = false,
-  emptyText = 'No KPI data available for the selected period.',
+  emptyText = 'За выбранный период данных пока нет.',
   children,
 }) => {
   if (isLoading) {
@@ -75,7 +75,7 @@ export const KPIStateWrapper: React.FC<BaseStateWrapperProps> = ({
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center py-4 max-h-44 aspect-video w-full">
         <Text size="xsmall" className="text-ui-fg-error">
-          Unable to load KPI data.
+          Не удалось загрузить показатели.
         </Text>
 
         <Text size="xsmall" className="text-ui-fg-muted max-w-72 truncate">
